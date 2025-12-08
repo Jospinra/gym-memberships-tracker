@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Membership Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .nav-tabs .nav-link.active { border-bottom: 3px solid #373f4b; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; }
+        .stat-card h5 { margin: 0; }
+        .stat-card .number { font-size: 2rem; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-dumbbell"></i> Gym Membership Tracker
+            </span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <h5>Total Members</h5>
+                    <div class="number" id="totalMembers">0</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h5>Active Plans</h5>
+                    <div class="number" id="activePlans">0</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h5>Total Revenue</h5>
+                    <div class="number" id="totalRevenue">$0</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <h5>Today's Check-ins</h5>
+                    <div class="number" id="todayCheckins">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#members"><i class="fas fa-users"></i> Members</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#plans"><i class="fas fa-list"></i> Plans</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#payments"><i class="fas fa-credit-card"></i> Payments</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#attendance"><i class="fas fa-door-open"></i> Attendance</a>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content mt-4">
+            <!-- MEMBERS TAB -->
+            <div class="tab-pane fade show active" id="members">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Register New Member</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="memberForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <input type="text" class="form-control" id="memberName" placeholder="Full Name" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <input type="email" class="form-control" id="memberEmail" placeholder="Email" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <input type="tel" class="form-control" id="memberPhone" placeholder="Phone Number">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <select class="form-control" id="memberPlan">
+                                        <option value="">Select Plan (Optional)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> Register Member
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <h5>Members List</h5>
+                <div id="membersList"></div>
+            </div>
+
+            <!-- PLANS TAB -->
+            <div class="tab-pane fade" id="plans">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Create New Plan</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="planForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <input type="text" class="form-control" id="planName" placeholder="Plan Name" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <input type="number" class="form-control" id="planDuration" placeholder="Duration (months)" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <input type="number" step="0.01" class="form-control" id="planPrice" placeholder="Price ($)" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <textarea class="form-control" id="planDescription" rows="2" placeholder="Description (optional)"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Create Plan
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <h5>Available Plans</h5>
+                <div id="plansList" class="row"></div>
+            </div>
+
+            <!-- PAYMENTS TAB -->
+            <div class="tab-pane fade" id="payments">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Record Payment</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="paymentForm">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <select class="form-control" id="paymentMember" required>
+                                        <option value="">Select Member</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <select class="form-control" id="paymentPlan">
+                                        <option value="">Select Plan</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <input type="number" step="0.01" class="form-control" id="paymentAmount" placeholder="Amount ($)" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-money-bill"></i> Record Payment
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <h5>Payment History</h5>
+                <div id="paymentsList"></div>
+            </div>
+
+            <!-- ATTENDANCE TAB -->
+            <div class="tab-pane fade" id="attendance">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Member Check-in</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="attendanceForm">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <select class="form-control" id="attendanceMember" required>
+                                        <option value="">Select Member to Check-in</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="fas fa-sign-in-alt"></i> Check-in
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <h5>Today's Attendance</h5>
+                <div id="attendanceList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadMembers();
+            await loadPlans();
+            await loadPayments();
+            await loadAttendance();
+            await updateStatistics();
+        });
+
+        // ==================== MEMBERS ====================
+        document.getElementById('memberForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await createMember();
+        });
+
+        async function createMember() {
+            const name = document.getElementById('memberName').value;
+            const email = document.getElementById('memberEmail').value;
+            const phone = document.getElementById('memberPhone').value;
+            const membership_plan_id = document.getElementById('memberPlan').value || null;
+
+            try {
+                const response = await fetch('/api/members', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, membership_plan_id })
+                });
+
+                if (response.ok) {
+                    showAlert('Member registered successfully!', 'success');
+                    document.getElementById('memberForm').reset();
+                    await loadMembers();
+                    await updateStatistics();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error, 'danger');
+                }
+            } catch (error) {
+                showAlert('Error registering member', 'danger');
+            }
+        }
+
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members');
+                const members = await response.json();
+                displayMembers(members);
+                populateMemberSelects(members);
+            } catch (error) {
+                console.error('Error loading members:', error);
+            }
+        }
+
+        function displayMembers(members) {
+            const membersList = document.getElementById('membersList');
+            
+            if (members.length === 0) {
+                membersList.innerHTML = '<div class="alert alert-info">No members registered yet.</div>';
+                return;
+            }
+
+            membersList.innerHTML = members.map(member => `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6>${member.name}</h6>
+                                <p class="mb-1"><i class="fas fa-envelope"></i> ${member.email}</p>
+                                <p class="mb-1"><i class="fas fa-phone"></i> ${member.phone || 'N/A'}</p>
+                                <p class="mb-0"><small class="text-muted">Plan: ${member.plan_name || 'None'} | Status: <span class="badge bg-${member.status === 'active' ? 'success' : 'danger'}">${member.status}</span></small></p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteMember(${member.id})">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function populateMemberSelects(members) {
+            const selects = ['memberPlan', 'paymentMember', 'attendanceMember'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                const currentValue = select.value;
+                
+                if (selectId === 'memberPlan') return; // Skip plan select
+                
+                select.innerHTML = '<option value="">Select Member</option>' + 
+                    members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+                select.value = currentValue;
+            });
+        }
+
+        async function deleteMember(id) {
+            if (confirm('Are you sure you want to delete this member?')) {
+                try {
+                    const response = await fetch(`/api/members/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        showAlert('Member deleted successfully!', 'success');
+                        await loadMembers();
+                        await updateStatistics();
+                    }
+                } catch (error) {
+                    showAlert('Error deleting member', 'danger');
+                }
+            }
+        }
+
+        // ==================== PLANS ====================
+        document.getElementById('planForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await createPlan();
+        });
+
+        async function createPlan() {
+            const name = document.getElementById('planName').value;
+            const duration_months = parseInt(document.getElementById('planDuration').value);
+            const price = parseFloat(document.getElementById('planPrice').value);
+            const description = document.getElementById('planDescription').value;
+
+            try {
+                const response = await fetch('/api/plans', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, duration_months, price, description })
+                });
+
+                if (response.ok) {
+                    showAlert('Plan created successfully!', 'success');
+                    document.getElementById('planForm').reset();
+                    await loadPlans();
+                    await updateStatistics();
+                } else {
+                    showAlert('Error creating plan', 'danger');
+                }
+            } catch (error) {
+                showAlert('Error creating plan', 'danger');
+            }
+        }
+
+        async function loadPlans() {
+            try {
+                const response = await fetch('/api/plans');
+                const plans = await response.json();
+                displayPlans(plans);
+                populatePlanSelects(plans);
+            } catch (error) {
+                console.error('Error loading plans:', error);
+            }
+        }
+
+        function displayPlans(plans) {
+            const plansList = document.getElementById('plansList');
+            
+            if (plans.length === 0) {
+                plansList.innerHTML = '<div class="alert alert-info w-100">No plans available yet.</div>';
+                return;
+            }
+
+            plansList.innerHTML = plans.map(plan => `
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${plan.name}</h5>
+                            <p class="card-text">${plan.description || 'No description'}</p>
+                            <p class="mb-1"><strong>Duration:</strong> ${plan.duration_months} months</p>
+                            <p class="mb-0"><strong>Price:</strong> $${plan.price.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function populatePlanSelects(plans) {
+            const memberPlanSelect = document.getElementById('memberPlan');
+            const currentValue = memberPlanSelect.value;
+            memberPlanSelect.innerHTML = '<option value="">Select Plan (Optional)</option>' + 
+                plans.map(p => `<option value="${p.id}">${p.name} - $${p.price.toFixed(2)}</option>`).join('');
+            memberPlanSelect.value = currentValue;
+
+            const paymentPlanSelect = document.getElementById('paymentPlan');
+            paymentPlanSelect.innerHTML = '<option value="">Select Plan</option>' + 
+                plans.map(p => `<option value="${p.id}">${p.name} - $${p.price.toFixed(2)}</option>`).join('');
+        }
+
+        // ==================== PAYMENTS ====================
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await recordPayment();
+        });
+
+        async function recordPayment() {
+            const member_id = document.getElementById('paymentMember').value;
+            const plan_id = document.getElementById('paymentPlan').value || null;
+            const amount = parseFloat(document.getElementById('paymentAmount').value);
+
+            if (!member_id || !amount) {
+                showAlert('Please fill all required fields', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/payments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ member_id, plan_id, amount })
+                });
+
+                if (response.ok) {
+                    showAlert('Payment recorded successfully!', 'success');
+                    document.getElementById('paymentForm').reset();
+                    await loadPayments();
+                    await updateStatistics();
+                }
+            } catch (error) {
+                showAlert('Error recording payment', 'danger');
+            }
+        }
+
+        async function loadPayments() {
+            try {
+                const response = await fetch('/api/payments');
+                const payments = await response.json();
+                displayPayments(payments);
+            } catch (error) {
+                console.error('Error loading payments:', error);
+            }
+        }
+
+        function displayPayments(payments) {
+            const paymentsList = document.getElementById('paymentsList');
+            
+            if (payments.length === 0) {
+                paymentsList.innerHTML = '<div class="alert alert-info">No payments recorded yet.</div>';
+                return;
+            }
+
+            paymentsList.innerHTML = `
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Amount</th>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Expiry</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${payments.map(p => `
+                            <tr>
+                                <td>${p.member_name}</td>
+                                <td>$${p.amount.toFixed(2)}</td>
+                                <td>${p.plan_name || 'N/A'}</td>
+                                <td><span class="badge bg-${p.status === 'completed' ? 'success' : 'warning'}">${p.status}</span></td>
+                                <td>${new Date(p.expiry_date).toLocaleDateString()}</td>
+                                <td>${new Date(p.payment_date).toLocaleDateString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // ==================== ATTENDANCE ====================
+        document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await checkInMember();
+        });
+
+        async function checkInMember() {
+            const member_id = document.getElementById('attendanceMember').value;
+
+            if (!member_id) {
+                showAlert('Please select a member', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/attendance/checkin/${member_id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    showAlert('Check-in recorded successfully!', 'success');
+                    document.getElementById('attendanceForm').reset();
+                    await loadAttendance();
+                    await updateStatistics();
+                }
+            } catch (error) {
+                showAlert('Error checking in member', 'danger');
+            }
+        }
+
+        async function loadAttendance() {
+            try {
+                // Load all attendance for display purposes
+                const response = await fetch('/api/members');
+                const members = await response.json();
+                
+                if (members.length > 0) {
+                    const member_id = members[0].id;
+                    const attendanceResponse = await fetch(`/api/attendance/${member_id}`);
+                    const attendance = await attendanceResponse.json();
+                    displayAttendance(attendance);
+                }
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+            }
+        }
+
+        function displayAttendance(attendance) {
+            const attendanceList = document.getElementById('attendanceList');
+            
+            if (attendance.length === 0) {
+                attendanceList.innerHTML = '<div class="alert alert-info">No check-ins recorded yet.</div>';
+                return;
+            }
+
+            attendanceList.innerHTML = `
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Check-in Time</th>
+                            <th>Check-out Time</th>
+                            <th>Duration (minutes)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${attendance.map(a => `
+                            <tr>
+                                <td>${new Date(a.check_in_date).toLocaleString()}</td>
+                                <td>${a.check_out_date ? new Date(a.check_out_date).toLocaleString() : 'Ongoing'}</td>
+                                <td>${a.duration_minutes || '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // ==================== STATISTICS ====================
+        async function updateStatistics() {
+            try {
+                const membersResponse = await fetch('/api/members');
+                const members = await membersResponse.json();
+                document.getElementById('totalMembers').textContent = members.length;
+
+                const plansResponse = await fetch('/api/plans');
+                const plans = await plansResponse.json();
+                document.getElementById('activePlans').textContent = plans.length;
+
+                const paymentsResponse = await fetch('/api/payments');
+                const payments = await paymentsResponse.json();
+                const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+                document.getElementById('totalRevenue').textContent = '$' + totalRevenue.toFixed(2);
+            } catch (error) {
+                console.error('Error updating statistics:', error);
+            }
+        }
+
+        // ==================== UTILITIES ====================
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

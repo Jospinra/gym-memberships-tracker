@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+gym-memberships-tracker/
+npm-debug.log
+coverage/
+dist/
+env
+*.env
