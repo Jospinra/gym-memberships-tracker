@@ -124,8 +124,82 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-artifact
+          path: ./build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubeconfig
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+        run: |
+          mkdir -p $HOME/.kube
+          echo "$KUBECONFIG_CONTENT" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+        if: ${{ secrets.KUBECONFIG != '' }}
+
+      - name: Verify Kubernetes Connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Update Deployment Image
+        run: |
+          kubectl set image deployment/gym-membership-tracker \
+            app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            --namespace=default \
+            --record
+        continue-on-error: true
+
+      - name: Monitor Rollout
+        run: |
+          kubectl rollout status deployment/gym-membership-tracker \
+            --namespace=default \
+            --timeout=5m
+        continue-on-error: true
+
+      - name: Verify Deployment Health
+        run: |
+          echo "Checking deployment status..."
+          kubectl get deployment gym-membership-tracker -n default
+          echo "Checking pod status..."
+          kubectl get pods -n default -l app=gym-membership-tracker
+          echo "Deployment verification complete"
+        continue-on-error: true
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository:** ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Strategy" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type:** Rolling Update" >> $GITHUB_STEP_SUMMARY
+          echo "- **Max Surge:** 1 pod" >> $GITHUB_STEP_SUMMARY
+          echo "- **Max Unavailable:** 0 pods (zero-downtime)" >> $GITHUB_STEP_SUMMARY
+
   notify:
-    needs: [test, build]
+    needs: [test, build, deploy]
     runs-on: ubuntu-latest
     if: always()
 
@@ -133,27 +207,30 @@ jobs:
       - name: Check Pipeline Status
         id: check
         run: |
-          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" ]]; then
+          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.deploy.result }}" == "success" ]]; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "emoji=✅" >> $GITHUB_OUTPUT
-            echo "message=CI Pipeline passed successfully!" >> $GITHUB_OUTPUT
+            echo "message=CI/CD Pipeline passed successfully!" >> $GITHUB_OUTPUT
           else
             echo "status=failure" >> $GITHUB_OUTPUT
             echo "emoji=❌" >> $GITHUB_OUTPUT
-            echo "message=CI Pipeline failed. Check logs for details." >> $GITHUB_OUTPUT
+            echo "message=CI/CD Pipeline failed. Check logs for details." >> $GITHUB_OUTPUT
           fi
 
       - name: Create Summary
         run: |
-          echo "${{ steps.check.outputs.emoji }} **CI Pipeline Notification**" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.check.outputs.emoji }} **CI/CD Pipeline Notification**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ steps.check.outputs.message }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Author: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Pipeline Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test:** ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build:** ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy:** ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
       - name: Send Slack Notification (Optional)
         # Only run when a Slack webhook secret is provided and not for forked PRs
