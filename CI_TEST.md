@@ -1,10 +1,19 @@
-# CI/CD Workflow Test
+# CI/CD Workflow Test - Fresh Run
 
-This file was created to trigger a fresh GitHub Actions workflow run after fixing the deprecated `actions/upload-artifact@v3` error.
+This file triggers a new GitHub Actions workflow run to clear cached v3 artifact action errors.
 
-The workflow now uses:
-- `actions/upload-artifact@v4` (latest, non-deprecated)
-- Proper CD deployment pipeline with Kubernetes
-- Zero-downtime rolling updates
+## Workflow Status
+- ✅ `actions/upload-artifact@v4` (v3 deprecated, v4 now active)
+- ✅ CD deployment pipeline added (Kubernetes rolling updates)
+- ✅ Zero-downtime deployments configured
 
-Timestamp: 2025-12-09
+## Changes Made
+1. Updated all artifact upload steps to v4
+2. Added deploy job with kubectl integration
+3. Configured rolling update strategy (maxSurge: 1, maxUnavailable: 0)
+4. Added resource limits and HPA configuration
+
+## Next Steps
+Push this commit to trigger a fresh workflow run that should resolve the deprecation error.
+
+Last updated: 2025-12-09 UTC
