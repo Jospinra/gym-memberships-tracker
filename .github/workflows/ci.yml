@@ -77,7 +77,7 @@ jobs:
 
       - name: Archive Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: coverage/
@@ -156,8 +156,9 @@ jobs:
           echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
       - name: Send Slack Notification (Optional)
+        # Only run when a Slack webhook secret is provided and not for forked PRs
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' && github.event_name != 'pull_request' }}
         uses: slackapi/slack-github-action@v1.27.0
-        if: always()
         with:
           payload: |
             {
@@ -172,6 +173,4 @@ jobs:
                 }
               ]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
