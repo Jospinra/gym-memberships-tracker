@@ -156,8 +156,8 @@ jobs:
           echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
       - name: Send Slack Notification (Optional)
-        # Only run when a Slack webhook secret is provided to avoid failing the workflow
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        # Only run when a Slack webhook secret is provided and not for forked PRs
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' && github.event_name != 'pull_request' }}
         uses: slackapi/slack-github-action@v1.27.0
         with:
           payload: |
