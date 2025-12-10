@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Gym Membership Tracker
+name: CI Pipeline - Gym Membership Tracker
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Wait for MySQL
         run: |
@@ -68,13 +68,14 @@ jobs:
           DB_NAME: gym_tracker
 
       - name: Upload Coverage Reports
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v3
         with:
           files: ./coverage/coverage-final.json
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
 
+      # FIXED VERSION (v3 → v4)
       - name: Archive Test Results
         if: always()
         uses: actions/upload-artifact@v4
@@ -94,10 +95,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v2
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -105,7 +106,7 @@ jobs:
 
       - name: Extract Metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -115,7 +116,7 @@ jobs:
             type=sha,prefix={{branch}}-
 
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -124,108 +125,43 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: ./build
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: latest
-
-      - name: Configure kubeconfig
-        env:
-          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
-        run: |
-          mkdir -p $HOME/.kube
-          echo "$KUBECONFIG_CONTENT" | base64 -d > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
-        if: ${{ secrets.KUBECONFIG != '' }}
-
-      - name: Verify Kubernetes Connection
-        run: |
-          kubectl cluster-info
-          kubectl get nodes
-
-      - name: Update Deployment Image
-        run: |
-          kubectl set image deployment/gym-membership-tracker \
-            app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --namespace=default \
-            --record
-        continue-on-error: true
-
-      - name: Monitor Rollout
-        run: |
-          kubectl rollout status deployment/gym-membership-tracker \
-            --namespace=default \
-            --timeout=5m
-        continue-on-error: true
-
-      - name: Verify Deployment Health
-        run: |
-          echo "Checking deployment status..."
-          kubectl get deployment gym-membership-tracker -n default
-          echo "Checking pod status..."
-          kubectl get pods -n default -l app=gym-membership-tracker
-        continue-on-error: true
-
   notify:
-    needs: [test, build, deploy]
+    needs: [test, build]
     runs-on: ubuntu-latest
     if: always()
 
     steps:
-      - name: Determine Status
+      - name: Check Pipeline Status
         id: check
         run: |
-          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.deploy.result }}" == "success" ]]; then
+          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" ]]; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "emoji=✅" >> $GITHUB_OUTPUT
-            echo "message=CI/CD Pipeline passed successfully!" >> $GITHUB_OUTPUT
+            echo "message=CI Pipeline passed successfully!" >> $GITHUB_OUTPUT
           else
             echo "status=failure" >> $GITHUB_OUTPUT
             echo "emoji=❌" >> $GITHUB_OUTPUT
-            echo "message=CI/CD Pipeline failed. Check logs for details." >> $GITHUB_OUTPUT
-          fi
+            echo "message=CI Pipeline failed. Check logs for details." >> $GITHUB_OUTPUT
 
-      - name: Create Pipeline Summary
+      - name: Create Summary
         run: |
-          echo "${{ steps.check.outputs.emoji }} **CI/CD Pipeline Summary**" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.check.outputs.emoji }} **CI Pipeline Notification**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ steps.check.outputs.message }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deploy | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Author: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
-      - name: Send Slack Notification
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' && github.event_name != 'pull_request' }}
+      - name: Send Slack Notification (Optional)
         uses: slackapi/slack-github-action@v1.27.0
+        if: always()
         with:
           payload: |
             {
-              "text": "${{ steps.check.outputs.emoji }} Gym Membership Tracker - CI/CD Pipeline",
+              "text": "${{ steps.check.outputs.emoji }} Gym Membership Tracker - CI Pipeline",
               "blocks": [
                 {
                   "type": "section",
@@ -236,4 +172,6 @@ jobs:
                 }
               ]
             }
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

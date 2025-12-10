@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="700" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <style>
+    .box { fill:#f6f9fc; stroke:#2b6cb0; stroke-width:2; rx:8; }
+    .small { font: 12px sans-serif; fill:#222; }
+    .title { font: 14px sans-serif; font-weight:700; fill:#0b3b66 }
+    .arrow { stroke:#2b6cb0; stroke-width:2; fill:none; marker-end: url(#arrowhead); }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2b6cb0" />
+    </marker>
+  </defs>
+
+  <!-- User / Browser -->
+  <rect x="40" y="40" width="160" height="70" class="box"/>
+  <text x="120" y="66" text-anchor="middle" class="title">User</text>
+  <text x="120" y="84" text-anchor="middle" class="small">Browser / Client</text>
+
+  <!-- Ingress / Public -->
+  <rect x="260" y="40" width="180" height="70" class="box"/>
+  <text x="350" y="66" text-anchor="middle" class="title">Ingress / Load Balancer</text>
+  <text x="350" y="84" text-anchor="middle" class="small">(Optional Ingress Controller)</text>
+
+  <!-- App Pod -->
+  <rect x="520" y="30" width="220" height="120" class="box"/>
+  <text x="630" y="54" text-anchor="middle" class="title">gym-membership-tracker</text>
+  <text x="630" y="74" text-anchor="middle" class="small">Express app (Node.js)</text>
+  <text x="630" y="92" text-anchor="middle" class="small">Serves API + static `public/`</text>
+
+  <!-- MySQL -->
+  <rect x="520" y="180" width="220" height="90" class="box"/>
+  <text x="630" y="204" text-anchor="middle" class="title">MySQL</text>
+  <text x="630" y="224" text-anchor="middle" class="small">Persistent storage (init.sql)</text>
+
+  <!-- CI/CD & Registry -->
+  <rect x="40" y="180" width="360" height="170" class="box"/>
+  <text x="220" y="202" text-anchor="middle" class="title">Developer / CI</text>
+  <text x="220" y="224" text-anchor="middle" class="small">GitHub + Actions</text>
+  <text x="220" y="244" text-anchor="middle" class="small">Builds, Tests, Push Images</text>
+  <rect x="60" y="260" width="140" height="70" rx="6" fill="#fff7ed" stroke="#d97706"/>
+  <text x="130" y="284" text-anchor="middle" class="small">GHCR / Docker Registry</text>
+
+  <!-- Docker Compose / Local Dev -->
+  <rect x="420" y="300" width="300" height="70" class="box"/>
+  <text x="570" y="322" text-anchor="middle" class="title">Local Dev</text>
+  <text x="570" y="342" text-anchor="middle" class="small">Docker Compose (app + mysql)</text>
+
+  <!-- Arrows -->
+  <path d="M200,76 L260,76" class="arrow" />
+  <path d="M440,76 L520,76" class="arrow" />
+  <path d="M630,150 L630,180" class="arrow" />
+  <path d="M350,240 L520,240" class="arrow" />
+  <path d="M260,300 L520,340" class="arrow" />
+
+  <!-- Notes -->
+  <text x="40" y="380" class="small">Key:</text>
+  <text x="120" y="380" class="small">- Blue boxes: deployed Kubernetes resources</text>
+  <text x="120" y="398" class="small">- Orange box: container registry</text>
+  <text x="120" y="416" class="small">- Local Dev: Docker Compose for dev/testing</text>
+
+  <!-- Legend line -->
+  <rect x="40" y="392" width="12" height="12" fill="#fff7ed" stroke="#d97706" />
+
+  <!-- Footer small text -->
+  <text x="40" y="440" class="small">Files of interest:</text>
+  <text x="40" y="458" class="small">- `index.js` (Express app)</text>
+  <text x="40" y="476" class="small">- `Dockerfile`, `docker-compose.yml`</text>
+  <text x="40" y="494" class="small">- `init.sql` (DB schema + seeds)</text>
+  <text x="40" y="512" class="small">- `.github/workflows/ci.yml` (CI/CD)</text>
+  <text x="40" y="530" class="small">- `k8s/` (deployment manifests)</text>
+</svg>
